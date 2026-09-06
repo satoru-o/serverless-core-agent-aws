@@ -35,3 +35,10 @@
 ## コミットメッセージの言語
 
 日本語で簡潔に書くこと(例: "feat: DynamoDBテーブル定義を追加")
+
+## タグ付けルール
+
+全てのAWSリソースに以下のタグを必須で付与すること:
+- Project = "serverless-core-agent-aws"
+- ManagedBy = "terraform"(手動作成のブートストラップリソースは "manual-bootstrap")
+- Phase = "core" または "agent"（該当するフェーズ）
