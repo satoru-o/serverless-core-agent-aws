@@ -275,8 +275,17 @@ plan.mdの Project Structure に従い、Terraform・Lambdaコードはすべて
 
 - [X] T038 [P] `core/` で `pytest -v` を実行し、全ユーザーストーリーの単体・統合テストが
       成功することを確認する
-- [ ] T039 quickstart.md の手順3(curlによるE2E検証)をデプロイ済みAPI Gatewayエンドポイントに
+- [X] T039 quickstart.md の手順3(curlによるE2E検証)をデプロイ済みAPI Gatewayエンドポイントに
       対して実行し、SC-001〜SC-005をすべて確認する
+
+      > **学び(本番デプロイで判明した不備)**: 実行中、状態変更(`PATCH /tickets/{id}/status`)で
+      > `AccessDeniedException` が発生した。原因は `core/iam.tf` のLambda実行ロールに
+      > `dynamodb:UpdateItem` が不足していたこと。`update_status` は `TransactWriteItems` 内で
+      > `Update` 操作を行うが、`moto` によるユニット/統合テスト(T038)はIAM権限を評価しない
+      > ため、テストは全て成功していたにもかかわらず本番デプロイまでこの不備に気づけなかった。
+      > `core/iam.tf` に `dynamodb:UpdateItem` を追加し `terraform apply` で再適用、実APIで
+      > 再検証して解消済み(T009の最小権限列挙時に `TransactWriteItems` 内部で使う個々の
+      > アクション(Update/Put/Delete等)も洗い出す必要がある、という教訓)。
 - [X] T040 [P] `core/` で `terraform fmt -check` / `terraform validate` を実行し、
       constitution原則II(IaC統一)・原則IV(タグ付け必須化)からの逸脱がないことを確認する
 
