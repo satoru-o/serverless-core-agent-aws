@@ -44,3 +44,6 @@ venv/
 
 # Lambdaデプロイパッケージ(archive_fileが生成するzip)
 *.zip
+
+# Memo
+memo/
