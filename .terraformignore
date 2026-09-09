@@ -1,0 +1,7 @@
+.terraform/
+*.tfstate
+*.tfstate.*
+.git/
+core/tests/
+core/src/**/__pycache__/
+*.md

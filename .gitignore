@@ -32,3 +32,15 @@ override.tf.json
 
 # terraform plan の出力ファイル(バイナリなのでコミット不要)
 *.tfplan
+
+# Python(core/配下のLambdaソース・テスト用)
+__pycache__/
+*.pyc
+.pytest_cache/
+.venv/
+venv/
+*.egg-info/
+.ruff_cache/
+
+# Lambdaデプロイパッケージ(archive_fileが生成するzip)
+*.zip
