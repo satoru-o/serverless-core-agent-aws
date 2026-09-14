@@ -39,9 +39,11 @@ data "aws_iam_policy_document" "decision" {
   }
 
   statement {
-    sid     = "BedrockConverse"
-    effect  = "Allow"
-    actions = ["bedrock:Converse"]
+    sid    = "BedrockConverse"
+    effect = "Allow"
+    # ConverseAPIはbedrock:Converseという専用アクションを持たず、bedrock:InvokeModel
+    # (基盤モデル呼び出しの認可アクション)で権限判定される(AWS仕様。実機検証で判明)。
+    actions = ["bedrock:InvokeModel"]
     resources = [
       "arn:aws:bedrock:ap-northeast-1:${data.aws_caller_identity.current.account_id}:inference-profile/${var.bedrock_inference_profile_id}",
       "arn:aws:bedrock:*::foundation-model/${var.bedrock_foundation_model_id}",

@@ -131,7 +131,7 @@ Phase 1の業務ロジック変更なし)。
 
 | ロール(Lambda) | 許可される操作 | 拒否される操作の例 |
 |---|---|---|
-| `decision` | `GET /tickets`, `GET /tickets/{id}`, `PATCH /tickets/{id}/status`(コード上`IN_PROGRESS`のみ発行)、`bedrock:Converse`(下記参照) | `POST /tickets`(作成)、Ticket API以外のAWSリソースへのアクセス |
+| `decision` | `GET /tickets`, `GET /tickets/{id}`, `PATCH /tickets/{id}/status`(コード上`IN_PROGRESS`のみ発行)、`bedrock:InvokeModel`(下記参照) | `POST /tickets`(作成)、Ticket API以外のAWSリソースへのアクセス |
 | `apply_decision` | `PATCH /tickets/{id}/status`(`DONE`) | 上記以外のTicket API操作、`states:*` |
 | `apply_rejection` | `PATCH /tickets/{id}/status`(`OPEN`) | 上記以外のTicket API操作、`states:*` |
 | `approval_callback` | `states:SendTaskSuccess`, `states:SendTaskFailure`(対象ステートマシンのみ)、`dynamodb:GetItem`/`PutItem`/`UpdateItem`(`agent-approval-links`テーブルのみ) | Ticket APIへの一切のアクセス |
@@ -149,7 +149,9 @@ IAMは「呼び出せるAPI・メソッド」までは制御できるが「PATCH
 呼び出せない(research.md §2)。Bedrockはこの場合、呼び出し元のIAMポリシーに
 **推論プロファイルARN**と、そのプロファイルがルーティングしうる**基盤モデルARN**の
 両方への許可を要求する。`decision`ロールには次の2つのResourceを持つ
-`bedrock:Converse`許可を付与する。
+`bedrock:InvokeModel`許可を付与する(Converse APIの呼び出しも、IAM上は
+`bedrock:Converse`ではなく`bedrock:InvokeModel`アクションで認可される。実機デプロイ時に
+`AccessDeniedException`で判明、research.md §2参照)。
 
 ```
 "Resource": [

@@ -44,13 +44,21 @@
   - 旧来のBedrock InvokeModel API(モデルごとに異なるリクエスト/レスポンス形式) → 却下。
     Converse APIの方がモデル非依存の共通インターフェースで実装がシンプルになる
 
+> **学び(実機デプロイで判明した訂正)**: 呼び出しAPIはConverse(`converse()`)のままだが、
+> これを許可するIAMアクションは`bedrock:Converse`ではなく**`bedrock:InvokeModel`**である
+> (ConverseAPIはInvokeModelと同じ認可アクションで権限判定される、AWS仕様)。当初
+> `agent/iam.tf`に`bedrock:Converse`を許可アクションとして実装したところ、実際に
+> `decision` Lambdaを実行すると`AccessDeniedException`(`bedrock:InvokeModel`が
+> 許可されていない旨)が発生し判明した。`agent/iam.tf`の`decision`ロールのポリシーは
+> `bedrock:InvokeModel`に修正済み。data-model.mdの記載も参照。
+
 ## 3. Lambda関数・IAMロールの責務分離
 
 - **Decision**: 単一の万能Lambdaにはせず、責務ごとに4つのLambda関数・IAMロールに分割する
 
   | Lambda | トリガー | 許可するTicket API操作 | その他の主な権限 |
   |---|---|---|---|
-  | `decision` | EventBridge(定期実行) | `GET /tickets`, `GET /tickets/{id}`, `PATCH /tickets/{id}/status`(コード上は`IN_PROGRESS`への遷移のみ発行) | `bedrock:Converse`(Amazon Nova Microの推論プロファイル・基盤モデルARN、§2参照)、承認用ステートマシンの`states:StartExecution` |
+  | `decision` | EventBridge(定期実行) | `GET /tickets`, `GET /tickets/{id}`, `PATCH /tickets/{id}/status`(コード上は`IN_PROGRESS`への遷移のみ発行) | `bedrock:InvokeModel`(Amazon Nova Microの推論プロファイル・基盤モデルARN、§2参照。Converse APIはこのアクションで認可される)、承認用ステートマシンの`states:StartExecution` |
   | `apply_decision` | Step Functions(承認後のTaskステート) | `PATCH /tickets/{id}/status`(`DONE`への遷移) | なし |
   | `apply_rejection` | Step Functions(却下時のTaskステート) | `PATCH /tickets/{id}/status`(`OPEN`への遷移=差し戻し) | なし |
   | `approval_callback` | API Gateway(承認リンク) | なし(Ticket APIを直接呼ばない) | `states:SendTaskSuccess` / `states:SendTaskFailure`(対象ステートマシンARNのみ) |

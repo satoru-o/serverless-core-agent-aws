@@ -45,15 +45,17 @@ terraform apply
 **002-agent-safe-operationによる変更**: Ticket APIの認可方式が`NONE`から`AWS_IAM`に
 変更されたため(specs/002-agent-safe-operation/contracts/ticket-api-access-control.md)、
 各リクエストはSigV4署名が必須になった。生の`curl`では署名できないため、以下では
-[`awscurl`](https://github.com/okigan/awscurl)(`pip install awscurl`)を使う。
-`--service execute-api --region ap-northeast-1 --profile sca-aws`を付与する点以外は
-リクエスト内容・レスポンス形式ともに変更なし。SigV4署名を自前で組み立てる場合や、
-AWS CLIのみで確認したい場合は`aws apigateway test-invoke-method`を代わりに使ってもよい。
+[`awscurl`](https://github.com/okigan/awscurl)を`uvx awscurl`(`uv`のツールキャッシュ経由、
+プロジェクト・システムのPython環境を汚さない)で使う。事前インストールは不要で、
+`uv`が入っていれば初回実行時に自動取得される。`--service execute-api --region
+ap-northeast-1 --profile sca-aws`を付与する点以外はリクエスト内容・レスポンス形式ともに
+変更なし。SigV4署名を自前で組み立てる場合や、AWS CLIのみで確認したい場合は
+`aws apigateway test-invoke-method`を代わりに使ってもよい。
 
 ### 3.1 チケット作成(US1)
 
 ```bash
-awscurl --service execute-api --region ap-northeast-1 --profile sca-aws -X POST "$API_URL/tickets" \
+uvx awscurl --service execute-api --region ap-northeast-1 --profile sca-aws -X POST "$API_URL/tickets" \
   -H "Content-Type: application/json" \
   -d '{"title": "サンプルチケット", "description": "動作確認用", "assignee": "satoru-o"}'
 ```
@@ -63,7 +65,7 @@ awscurl --service execute-api --region ap-northeast-1 --profile sca-aws -X POST 
 ### 3.2 単体取得(US4)
 
 ```bash
-awscurl --service execute-api --region ap-northeast-1 --profile sca-aws "$API_URL/tickets/<ticket_id>"
+uvx awscurl --service execute-api --region ap-northeast-1 --profile sca-aws "$API_URL/tickets/<ticket_id>"
 ```
 
 **期待結果**: `200`、手順3.1で作成した内容と一致するチケットが返る(SC-001)。
@@ -71,9 +73,9 @@ awscurl --service execute-api --region ap-northeast-1 --profile sca-aws "$API_UR
 ### 3.3 一覧取得・状態フィルタ(US3)
 
 ```bash
-awscurl --service execute-api --region ap-northeast-1 --profile sca-aws "$API_URL/tickets"
-awscurl --service execute-api --region ap-northeast-1 --profile sca-aws "$API_URL/tickets?status=OPEN"
-awscurl --service execute-api --region ap-northeast-1 --profile sca-aws "$API_URL/tickets?status=INVALID"
+uvx awscurl --service execute-api --region ap-northeast-1 --profile sca-aws "$API_URL/tickets"
+uvx awscurl --service execute-api --region ap-northeast-1 --profile sca-aws "$API_URL/tickets?status=OPEN"
+uvx awscurl --service execute-api --region ap-northeast-1 --profile sca-aws "$API_URL/tickets?status=INVALID"
 ```
 
 **期待結果**: 1件目は登録済み全チケット、2件目は `OPEN` のチケットのみ、3件目は `400`
@@ -82,16 +84,16 @@ awscurl --service execute-api --region ap-northeast-1 --profile sca-aws "$API_UR
 ### 3.4 正しい状態遷移(US2)
 
 ```bash
-awscurl --service execute-api --region ap-northeast-1 --profile sca-aws -X PATCH "$API_URL/tickets/<ticket_id>/status" \
+uvx awscurl --service execute-api --region ap-northeast-1 --profile sca-aws -X PATCH "$API_URL/tickets/<ticket_id>/status" \
   -H "Content-Type: application/json" -d '{"status": "IN_PROGRESS"}'
 
-awscurl --service execute-api --region ap-northeast-1 --profile sca-aws -X PATCH "$API_URL/tickets/<ticket_id>/status" \
+uvx awscurl --service execute-api --region ap-northeast-1 --profile sca-aws -X PATCH "$API_URL/tickets/<ticket_id>/status" \
   -H "Content-Type: application/json" -d '{"status": "OPEN"}'
 
-awscurl --service execute-api --region ap-northeast-1 --profile sca-aws -X PATCH "$API_URL/tickets/<ticket_id>/status" \
+uvx awscurl --service execute-api --region ap-northeast-1 --profile sca-aws -X PATCH "$API_URL/tickets/<ticket_id>/status" \
   -H "Content-Type: application/json" -d '{"status": "IN_PROGRESS"}'
 
-awscurl --service execute-api --region ap-northeast-1 --profile sca-aws -X PATCH "$API_URL/tickets/<ticket_id>/status" \
+uvx awscurl --service execute-api --region ap-northeast-1 --profile sca-aws -X PATCH "$API_URL/tickets/<ticket_id>/status" \
   -H "Content-Type: application/json" -d '{"status": "DONE"}'
 ```
 
@@ -101,7 +103,7 @@ awscurl --service execute-api --region ap-northeast-1 --profile sca-aws -X PATCH
 ### 3.5 定義されていない遷移の拒否(US2 / SC-002)
 
 ```bash
-awscurl --service execute-api --region ap-northeast-1 --profile sca-aws -X PATCH "$API_URL/tickets/<ticket_id>/status" \
+uvx awscurl --service execute-api --region ap-northeast-1 --profile sca-aws -X PATCH "$API_URL/tickets/<ticket_id>/status" \
   -H "Content-Type: application/json" -d '{"status": "OPEN"}'
 ```
 (直前の手順で `<ticket_id>` は `DONE` になっている想定)
@@ -112,7 +114,7 @@ awscurl --service execute-api --region ap-northeast-1 --profile sca-aws -X PATCH
 ### 3.6 履歴の追跡(US5 / SC-003)
 
 ```bash
-awscurl --service execute-api --region ap-northeast-1 --profile sca-aws "$API_URL/tickets/<ticket_id>/history"
+uvx awscurl --service execute-api --region ap-northeast-1 --profile sca-aws "$API_URL/tickets/<ticket_id>/history"
 ```
 
 **期待結果**: `200`。作成時の記録(`from_status: null, to_status: "OPEN"`)を含め、手順3.4で
@@ -122,7 +124,7 @@ awscurl --service execute-api --region ap-northeast-1 --profile sca-aws "$API_UR
 ### 3.7 存在しないIDへのアクセス
 
 ```bash
-awscurl --service execute-api --region ap-northeast-1 --profile sca-aws "$API_URL/tickets/00000000-0000-0000-0000-000000000000"
+uvx awscurl --service execute-api --region ap-northeast-1 --profile sca-aws "$API_URL/tickets/00000000-0000-0000-0000-000000000000"
 ```
 
 **期待結果**: `404`(`NOT_FOUND`、FR-009)。
