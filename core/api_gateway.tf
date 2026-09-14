@@ -2,6 +2,11 @@
 # チケット管理APIのAPI Gateway(REST API)。各ユーザーストーリーのメソッドはこのファイルに
 # 追記していく。api_gateway.tf の変更は aws_api_gateway_deployment のtriggerで検知され、
 # `terraform apply` のたびに自動的に再デプロイされる。
+#
+# 002-agent-safe-operation (T004): 全メソッドの authorization を NONE から AWS_IAM に変更。
+# エージェント側のIAMロールによる呼び出し制御(execute-api:Invoke)を実効あるものにするため。
+# 呼び出し元はSigV4署名が必須になる(specs/002-agent-safe-operation/contracts/
+# ticket-api-access-control.md参照)。
 
 # --- T011: REST API本体 + 共通の親リソース /tickets ---
 
@@ -23,7 +28,7 @@ resource "aws_api_gateway_method" "tickets_post" {
   rest_api_id   = aws_api_gateway_rest_api.this.id
   resource_id   = aws_api_gateway_resource.tickets.id
   http_method   = "POST"
-  authorization = "NONE"
+  authorization = "AWS_IAM"
 }
 
 resource "aws_api_gateway_integration" "tickets_post" {
@@ -57,7 +62,7 @@ resource "aws_api_gateway_method" "ticket_history_get" {
   rest_api_id   = aws_api_gateway_rest_api.this.id
   resource_id   = aws_api_gateway_resource.ticket_history.id
   http_method   = "GET"
-  authorization = "NONE"
+  authorization = "AWS_IAM"
 }
 
 resource "aws_api_gateway_integration" "ticket_history_get" {
@@ -77,7 +82,7 @@ resource "aws_api_gateway_method" "ticket_get" {
   rest_api_id   = aws_api_gateway_rest_api.this.id
   resource_id   = aws_api_gateway_resource.ticket_id.id
   http_method   = "GET"
-  authorization = "NONE"
+  authorization = "AWS_IAM"
 }
 
 resource "aws_api_gateway_integration" "ticket_get" {
@@ -96,7 +101,7 @@ resource "aws_api_gateway_method" "tickets_get" {
   rest_api_id   = aws_api_gateway_rest_api.this.id
   resource_id   = aws_api_gateway_resource.tickets.id
   http_method   = "GET"
-  authorization = "NONE"
+  authorization = "AWS_IAM"
 }
 
 resource "aws_api_gateway_integration" "tickets_get" {
@@ -127,7 +132,7 @@ resource "aws_api_gateway_method" "ticket_status_patch" {
   rest_api_id   = aws_api_gateway_rest_api.this.id
   resource_id   = aws_api_gateway_resource.ticket_status.id
   http_method   = "PATCH"
-  authorization = "NONE"
+  authorization = "AWS_IAM"
 }
 
 resource "aws_api_gateway_integration" "ticket_status_patch" {

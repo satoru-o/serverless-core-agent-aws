@@ -42,10 +42,18 @@ terraform apply
 
 以下、`API_URL` はTerraform出力のAPI GatewayエンドポイントURLに読み替える。
 
+**002-agent-safe-operationによる変更**: Ticket APIの認可方式が`NONE`から`AWS_IAM`に
+変更されたため(specs/002-agent-safe-operation/contracts/ticket-api-access-control.md)、
+各リクエストはSigV4署名が必須になった。生の`curl`では署名できないため、以下では
+[`awscurl`](https://github.com/okigan/awscurl)(`pip install awscurl`)を使う。
+`--service execute-api --region ap-northeast-1 --profile sca-aws`を付与する点以外は
+リクエスト内容・レスポンス形式ともに変更なし。SigV4署名を自前で組み立てる場合や、
+AWS CLIのみで確認したい場合は`aws apigateway test-invoke-method`を代わりに使ってもよい。
+
 ### 3.1 チケット作成(US1)
 
 ```bash
-curl -sX POST "$API_URL/tickets" \
+awscurl --service execute-api --region ap-northeast-1 --profile sca-aws -X POST "$API_URL/tickets" \
   -H "Content-Type: application/json" \
   -d '{"title": "サンプルチケット", "description": "動作確認用", "assignee": "satoru-o"}'
 ```
@@ -55,7 +63,7 @@ curl -sX POST "$API_URL/tickets" \
 ### 3.2 単体取得(US4)
 
 ```bash
-curl -s "$API_URL/tickets/<ticket_id>"
+awscurl --service execute-api --region ap-northeast-1 --profile sca-aws "$API_URL/tickets/<ticket_id>"
 ```
 
 **期待結果**: `200`、手順3.1で作成した内容と一致するチケットが返る(SC-001)。
@@ -63,9 +71,9 @@ curl -s "$API_URL/tickets/<ticket_id>"
 ### 3.3 一覧取得・状態フィルタ(US3)
 
 ```bash
-curl -s "$API_URL/tickets"
-curl -s "$API_URL/tickets?status=OPEN"
-curl -s "$API_URL/tickets?status=INVALID"
+awscurl --service execute-api --region ap-northeast-1 --profile sca-aws "$API_URL/tickets"
+awscurl --service execute-api --region ap-northeast-1 --profile sca-aws "$API_URL/tickets?status=OPEN"
+awscurl --service execute-api --region ap-northeast-1 --profile sca-aws "$API_URL/tickets?status=INVALID"
 ```
 
 **期待結果**: 1件目は登録済み全チケット、2件目は `OPEN` のチケットのみ、3件目は `400`
@@ -74,16 +82,16 @@ curl -s "$API_URL/tickets?status=INVALID"
 ### 3.4 正しい状態遷移(US2)
 
 ```bash
-curl -sX PATCH "$API_URL/tickets/<ticket_id>/status" \
+awscurl --service execute-api --region ap-northeast-1 --profile sca-aws -X PATCH "$API_URL/tickets/<ticket_id>/status" \
   -H "Content-Type: application/json" -d '{"status": "IN_PROGRESS"}'
 
-curl -sX PATCH "$API_URL/tickets/<ticket_id>/status" \
+awscurl --service execute-api --region ap-northeast-1 --profile sca-aws -X PATCH "$API_URL/tickets/<ticket_id>/status" \
   -H "Content-Type: application/json" -d '{"status": "OPEN"}'
 
-curl -sX PATCH "$API_URL/tickets/<ticket_id>/status" \
+awscurl --service execute-api --region ap-northeast-1 --profile sca-aws -X PATCH "$API_URL/tickets/<ticket_id>/status" \
   -H "Content-Type: application/json" -d '{"status": "IN_PROGRESS"}'
 
-curl -sX PATCH "$API_URL/tickets/<ticket_id>/status" \
+awscurl --service execute-api --region ap-northeast-1 --profile sca-aws -X PATCH "$API_URL/tickets/<ticket_id>/status" \
   -H "Content-Type: application/json" -d '{"status": "DONE"}'
 ```
 
@@ -93,7 +101,7 @@ curl -sX PATCH "$API_URL/tickets/<ticket_id>/status" \
 ### 3.5 定義されていない遷移の拒否(US2 / SC-002)
 
 ```bash
-curl -sX PATCH "$API_URL/tickets/<ticket_id>/status" \
+awscurl --service execute-api --region ap-northeast-1 --profile sca-aws -X PATCH "$API_URL/tickets/<ticket_id>/status" \
   -H "Content-Type: application/json" -d '{"status": "OPEN"}'
 ```
 (直前の手順で `<ticket_id>` は `DONE` になっている想定)
@@ -104,7 +112,7 @@ curl -sX PATCH "$API_URL/tickets/<ticket_id>/status" \
 ### 3.6 履歴の追跡(US5 / SC-003)
 
 ```bash
-curl -s "$API_URL/tickets/<ticket_id>/history"
+awscurl --service execute-api --region ap-northeast-1 --profile sca-aws "$API_URL/tickets/<ticket_id>/history"
 ```
 
 **期待結果**: `200`。作成時の記録(`from_status: null, to_status: "OPEN"`)を含め、手順3.4で
@@ -114,7 +122,7 @@ curl -s "$API_URL/tickets/<ticket_id>/history"
 ### 3.7 存在しないIDへのアクセス
 
 ```bash
-curl -s "$API_URL/tickets/00000000-0000-0000-0000-000000000000"
+awscurl --service execute-api --region ap-northeast-1 --profile sca-aws "$API_URL/tickets/00000000-0000-0000-0000-000000000000"
 ```
 
 **期待結果**: `404`(`NOT_FOUND`、FR-009)。
@@ -124,6 +132,6 @@ curl -s "$API_URL/tickets/00000000-0000-0000-0000-000000000000"
 - [ ] SC-001: 作成直後の一覧・単体取得で内容が確認できる(手順3.1〜3.3)
 - [ ] SC-002: 未定義遷移が100%拒否され状態が変化しない(手順3.5)
 - [ ] SC-003: すべての成立した状態変更が履歴から追跡できる(手順3.6)
-- [ ] SC-004: UIなしでAPI呼び出しのみで一連の操作が完結する(本ガイド全体がcurlのみで完結)
+- [ ] SC-004: UIなしでAPI呼び出しのみで一連の操作が完結する(本ガイド全体がawscurl等のAPI呼び出しのみで完結)
 - [ ] SC-005: 不正な入力(存在しないID・不正フィルタ)に対し分かりやすいエラーが返る
       (手順3.3, 3.7)

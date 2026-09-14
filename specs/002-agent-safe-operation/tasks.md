@@ -65,12 +65,12 @@ plan.mdの Project Structure に従う:
 
 **Purpose**: プロジェクトの初期構造・開発依存関係の整備
 
-- [ ] T001 `agent/src/ticket_agent/`、`agent/tests/ticket_agent/unit/`、
+- [X] T001 `agent/src/ticket_agent/`、`agent/tests/ticket_agent/unit/`、
       `agent/tests/ticket_agent/integration/` ディレクトリを作成する(各ディレクトリに空の
       `__init__.py` を配置し、pytestのテスト検出・パッケージインポートが機能するようにする)
-- [ ] T002 [P] `agent/tests/requirements-dev.txt` を作成し、開発依存(`pytest`, `moto`, `boto3`)を
+- [X] T002 [P] `agent/tests/requirements-dev.txt` を作成し、開発依存(`pytest`, `moto`, `boto3`)を
       記載する(Lambdaデプロイパッケージには含めない)
-- [ ] T003 [P] `agent/pyproject.toml` を作成し、`ruff` のlint/format設定
+- [X] T003 [P] `agent/pyproject.toml` を作成し、`ruff` のlint/format設定
       (`src = ["src/ticket_agent", "tests/ticket_agent"]`)と `pytest` 設定
       (`pythonpath = ["src"]`, `testpaths = ["tests/ticket_agent"]`)を定義する
       (`core/pyproject.toml` を踏襲)
@@ -83,40 +83,40 @@ plan.mdの Project Structure に従う:
 
 **⚠️ CRITICAL**: このフェーズが完了するまで、どのユーザーストーリーの実装にも着手できない
 
-- [ ] T004 [P] Terraform: `core/api_gateway.tf` の全メソッド(`tickets_post` / `tickets_get` /
+- [X] T004 [P] Terraform: `core/api_gateway.tf` の全メソッド(`tickets_post` / `tickets_get` /
       `ticket_get` / `ticket_status_patch` / `ticket_history_get`)の `authorization` を
       `"NONE"` から `"AWS_IAM"` に変更する(contracts/ticket-api-access-control.md、
       ユーザー承認済みの変更)
-- [ ] T005 [P] Terraform: `core/outputs.tf` に `ticket_api_execution_arn`
+- [X] T005 [P] Terraform: `core/outputs.tf` に `ticket_api_execution_arn`
       (`aws_api_gateway_rest_api.this.execution_arn`)の出力を追加する
-- [ ] T006 Terraform: `agent/providers.tf` に `backend "s3"`(`key = "agent/terraform.tfstate"`、
+- [X] T006 Terraform: `agent/providers.tf` に `backend "s3"`(`key = "agent/terraform.tfstate"`、
       バケット・プロファイル・リージョンは`core/`と同一)、`provider "aws"`
       (`default_tags` に `Phase = "agent"` を含む)、`data "terraform_remote_state" "core"`
       (T004, T005で追加した出力を参照するため)を定義する(T004, T005を`core/`に
       `terraform apply`済みであることに依存)
-- [ ] T007 [P] Terraform: `agent/variables.tf` に共通変数を定義する
+- [X] T007 [P] Terraform: `agent/variables.tf` に共通変数を定義する
       (`execution_limit`(既定20)、`decision_timeout_seconds`(既定60)、
       `eventbridge_schedule`(既定`"rate(5 minutes)"`)、`budget_limit_usd`、
       `notification_email`、`approval_timeout_seconds`(既定86400)、
       `log_retention_days`(既定30))。すべてTerraform変数として外出しし、
       コードへの固定値埋め込みを避ける(spec.md Assumptions)
-- [ ] T008 [P] `agent/src/ticket_agent/errors.py` に `UnauthorizedTicketApiCallError` /
+- [X] T008 [P] `agent/src/ticket_agent/errors.py` に `UnauthorizedTicketApiCallError` /
       `TicketApiError` / `ExecutionLimitReachedError` / `InvalidApprovalLinkError` の
       ドメイン例外クラスを定義する
-- [ ] T009 `agent/src/ticket_agent/ticket_client.py` にSigV4署名付きTicket APIクライアントを
+- [X] T009 `agent/src/ticket_agent/ticket_client.py` にSigV4署名付きTicket APIクライアントを
       実装する: `get_ticket(ticket_id)` / `list_tickets(status=None)` /
       `update_status(ticket_id, status)`。`botocore.auth.SigV4Auth` +
       `botocore.awsrequest.AWSRequest` で署名し `urllib.request` で送信する
       (research.md §7)。レスポンスが `403` の場合は `UnauthorizedTicketApiCallError` に
       変換する(contracts/ticket-api-access-control.md)(T008に依存)
-- [ ] T010 [P] `agent/src/ticket_agent/audit_log.py` に
+- [X] T010 [P] `agent/src/ticket_agent/audit_log.py` に
       `log_operation(actor, ticket_id, action, result, detail=None)` を実装する。
       data-model.md「操作記録」のフィールド(`timestamp` / `actor` / `ticket_id` / `action` /
       `result` / `detail`)を持つ構造化JSONを標準出力に書き込む(CloudWatch Logsに
       自動収集される)
-- [ ] T011 [P] 単体テスト: SigV4署名・403変換
+- [X] T011 [P] 単体テスト: SigV4署名・403変換
       `agent/tests/ticket_agent/unit/test_ticket_client.py`(T009に依存)
-- [ ] T012 [P] 単体テスト: 操作記録のJSONスキーマ
+- [X] T012 [P] 単体テスト: 操作記録のJSONスキーマ
       `agent/tests/ticket_agent/unit/test_audit_log.py`(T010に依存)
 
 **Checkpoint**: 基盤が完成。以降、各ユーザーストーリーの実装に着手できる
@@ -134,68 +134,68 @@ plan.mdの Project Structure に従う:
 
 ### Tests for User Story 1
 
-- [ ] T013 [P] [US1] 単体テスト: 実行回数上限の判定
+- [X] T013 [P] [US1] 単体テスト: 実行回数上限の判定
       `agent/tests/ticket_agent/unit/test_decision_handler.py`
       (上限(`EXECUTION_LIMIT`)到達時にそれ以上`ticket_client`を呼ばず
       `EXECUTION_LIMIT_REACHED` を記録して正常終了することを検証、FR-003)
-- [ ] T014 [P] [US1] 統合テスト: `decision` ロールのIAM境界
+- [X] T014 [P] [US1] 統合テスト: `decision` ロールのIAM境界
       `agent/tests/ticket_agent/integration/test_iam_boundaries_decision.py`
       (`decision` ロールのIAMポリシードキュメントが `GET /tickets` / `GET /tickets/{id}` /
       `PATCH /tickets/{id}/status` の3メソッドのみを許可し、`POST /tickets` や
       `dynamodb:*` / `states:SendTaskSuccess` 等を一切含まないことを検証、FR-001/002)
-- [ ] T015 [P] [US1] 単体テスト: `budget_stop_handler`
+- [X] T015 [P] [US1] 単体テスト: `budget_stop_handler`
       `agent/tests/ticket_agent/unit/test_budget_stop_handler.py`
       (しきい値100%のSNSメッセージでのみ`events.disable_rule()`を呼び、80%通知では
       何もしないことを検証、FR-005/006)
 
 ### Implementation for User Story 1
 
-- [ ] T016 [US1] `agent/src/ticket_agent/decision.py` に、`bedrock-runtime`クライアントの
+- [X] T016 [US1] `agent/src/ticket_agent/decision.py` に、`bedrock-runtime`クライアントの
       `converse()`(Amazon Nova Micro、クロスリージョン推論プロファイル指定、research.md §2)を
       呼び出し、チケットごとに `NO_OP` / `START_PROGRESS` のいずれかを判断するロジックを
       実装する(この時点では `COMPLETE` 判断は行わない。US3で拡張)
-- [ ] T017 [US1] `agent/src/ticket_agent/decision_handler.py` にEventBridgeトリガーの
+- [X] T017 [US1] `agent/src/ticket_agent/decision_handler.py` にEventBridgeトリガーの
       Lambdaエントリポイントを実装する: `ticket_client.list_tickets()` で対象チケットを
       取得 → 呼び出し回数カウンタ(環境変数 `EXECUTION_LIMIT`)を見ながら `decision.py` を
       呼び出し → `START_PROGRESS` は `ticket_client.update_status(..., "IN_PROGRESS")` を
       実行 → 各操作を `audit_log.log_operation()` で記録 → 上限到達時は
       `EXECUTION_LIMIT_REACHED` を記録して正常終了する(T009, T010, T016に依存、
       T013をパスさせる)
-- [ ] T018 [US1] `agent/src/ticket_agent/budget_stop_handler.py` にSNS(AWS Budgets通知)
+- [X] T018 [US1] `agent/src/ticket_agent/budget_stop_handler.py` にSNS(AWS Budgets通知)
       トリガーのLambdaを実装する: しきい値100%のメッセージのみ処理し `events.disable_rule()`
       で `decision` Lambdaのスケジュールルールを無効化、`audit_log.log_operation(actor=
       "budget_stop", action="BUDGET_STOP", ...)` を記録する(research.md §5、T010に依存、
       T015をパスさせる)
-- [ ] T019 [US1] Terraform: `agent/iam.tf` に `decision` 実行ロールを定義する。許可:
+- [X] T019 [US1] Terraform: `agent/iam.tf` に `decision` 実行ロールを定義する。許可:
       `execute-api:Invoke`(`${data.terraform_remote_state.core.outputs.
       ticket_api_execution_arn}/v1/GET/tickets`, `.../v1/GET/tickets/*`,
       `.../v1/PATCH/tickets/*/status`)、`bedrock:Converse`(推論プロファイルARN +
       基盤モデルARN(リージョンワイルドカード)の2 Resource、data-model.md「decisionロールの
       Bedrock関連IAMポリシー」)、CloudWatch Logs書き込み。`dynamodb:*` / `states:*` は
       含めない(T006, T007に依存、T014をパスさせる)
-- [ ] T020 [US1] Terraform: `agent/lambda.tf` に `decision` Lambda(runtime `python3.13`、
+- [X] T020 [US1] Terraform: `agent/lambda.tf` に `decision` Lambda(runtime `python3.13`、
       handler `ticket_agent.decision_handler.lambda_handler`、
       `timeout = var.decision_timeout_seconds`、環境変数 `EXECUTION_LIMIT =
       var.execution_limit`, `TICKET_API_BASE_URL`, `BEDROCK_MODEL_ID`(推論プロファイルID)、
       `role = aws_iam_role.decision.arn`)を定義する。`archive_file` で `agent/src` を
       ZIP化する(T017, T019に依存)
-- [ ] T021 [US1] Terraform: `agent/eventbridge.tf` に `var.eventbridge_schedule`
+- [X] T021 [US1] Terraform: `agent/eventbridge.tf` に `var.eventbridge_schedule`
       (既定`rate(5 minutes)`)のスケジュールルールと `decision` Lambda(T020)をターゲットに
       設定し、`aws_lambda_permission` を付与する(research.md §9、T020, T007に依存)
-- [ ] T022 [US1] Terraform: `agent/iam.tf` に `budget_stop` 実行ロールを定義する。許可:
+- [X] T022 [US1] Terraform: `agent/iam.tf` に `budget_stop` 実行ロールを定義する。許可:
       `events:DisableRule`(T021で作成したEventBridgeルールARNのみ)、CloudWatch Logs書き込み
       (T006, T021に依存 — 対象ルールARNを参照するためT021より後に定義する、
       /speckit-analyze F2対応)
-- [ ] T023 [US1] Terraform: `agent/lambda.tf` に `budget_stop` Lambda(handler
+- [X] T023 [US1] Terraform: `agent/lambda.tf` に `budget_stop` Lambda(handler
       `ticket_agent.budget_stop_handler.lambda_handler`、`role =
       aws_iam_role.budget_stop.arn`)を追加する(T018, T022に依存)
-- [ ] T024 [US1] Terraform: `agent/sns.tf` に `agent-budget-alert` トピック、運用者メール
+- [X] T024 [US1] Terraform: `agent/sns.tf` に `agent-budget-alert` トピック、運用者メール
       サブスクリプション(`var.notification_email`)、`budget_stop` Lambda(T023)への
       サブスクリプション・Lambda呼び出し許可を定義する(T023, T007に依存)
-- [ ] T025 [US1] Terraform: `agent/budgets.tf` に `aws_budgets_budget`(`cost_filter`で
+- [X] T025 [US1] Terraform: `agent/budgets.tf` に `aws_budgets_budget`(`cost_filter`で
       タグ`Phase=agent`に限定、80%/100%の`ACTUAL`通知を`agent-budget-alert`へ送信)を
       定義する(contracts/budget-circuit-breaker.md、T024, T007に依存)
-- [ ] T026 [US1] Terraform: `agent/outputs.tf` に `decision` Lambda名・EventBridgeルール名の
+- [X] T026 [US1] Terraform: `agent/outputs.tf` に `decision` Lambda名・EventBridgeルール名の
       出力を定義する(手動復旧・動作確認用、T020, T021に依存)
 
 **Checkpoint**: `agent/`を初回`terraform apply`した時点で、権限制御・実行回数上限・
@@ -214,25 +214,25 @@ plan.mdの Project Structure に従う:
 
 ### Tests for User Story 2
 
-- [ ] T027 [P] [US2] 単体テスト: 許可範囲外呼び出しの記録
+- [X] T027 [P] [US2] 単体テスト: 許可範囲外呼び出しの記録
       `agent/tests/ticket_agent/unit/test_decision_handler_audit.py`
       (`ticket_client` が `UnauthorizedTicketApiCallError` を送出した場合に
       `decision_handler` が処理を継続しつつ `audit_log.log_operation(result="rejected",
       action="UNAUTHORIZED_ATTEMPT")` を呼ぶことを検証、FR-009)
-- [ ] T028 [P] [US2] 単体テスト: CloudWatch Logs Insightsクエリ文字列
+- [X] T028 [P] [US2] 単体テスト: CloudWatch Logs Insightsクエリ文字列
       `agent/tests/ticket_agent/unit/test_log_insights_query.py`
       (T031で定義するクエリ文字列が `timestamp, actor, ticket_id, action, result` を
       フィールドとして含み、時系列ソートを行う形式であることを検証、FR-010)
 
 ### Implementation for User Story 2
 
-- [ ] T029 [US2] `agent/src/ticket_agent/decision_handler.py`(T017)に、
+- [X] T029 [US2] `agent/src/ticket_agent/decision_handler.py`(T017)に、
       `UnauthorizedTicketApiCallError` 発生時の例外ハンドリング(記録して処理継続)を
       追加する(T027をパスさせる)
-- [ ] T030 [P] [US2] Terraform: `agent/cloudwatch.tf` に `decision`(T020) / `budget_stop`
+- [X] T030 [P] [US2] Terraform: `agent/cloudwatch.tf` に `decision`(T020) / `budget_stop`
       (T023) Lambdaのロググループ(`aws_cloudwatch_log_group`、`retention_in_days =
       var.log_retention_days`)を明示的に定義する(既定の無期限保持を避ける、T020, T023に依存)
-- [ ] T031 [US2] Terraform: `agent/cloudwatch.tf` に `aws_cloudwatch_query_definition`
+- [X] T031 [US2] Terraform: `agent/cloudwatch.tf` に `aws_cloudwatch_query_definition`
       (名前 `agent-operation-history`、フィールド `timestamp, actor, ticket_id, action,
       result, detail` を時系列で表示するInsightsクエリ)を定義し、FR-010(任意期間参照の
       手段の提供)を満たす(T030に依存、T028をパスさせる)
@@ -254,71 +254,71 @@ plan.mdの Project Structure に従う:
 
 ### Tests for User Story 3
 
-- [ ] T032 [P] [US3] 単体テスト: `apply_decision_handler`
+- [X] T032 [P] [US3] 単体テスト: `apply_decision_handler`
       `agent/tests/ticket_agent/unit/test_apply_decision_handler.py`
       (`ticket_client.update_status(ticket_id, "DONE")` を呼び出すことを検証、FR-013)
-- [ ] T033 [P] [US3] 単体テスト: `apply_rejection_handler`
+- [X] T033 [P] [US3] 単体テスト: `apply_rejection_handler`
       `agent/tests/ticket_agent/unit/test_apply_rejection_handler.py`
       (`ticket_client.update_status(ticket_id, "OPEN")` を呼び出すことを検証、FR-014)
-- [ ] T034 [P] [US3] 統合テスト(moto DynamoDB): `approval_links` の条件付き書き込み
+- [X] T034 [P] [US3] 統合テスト(moto DynamoDB): `approval_links` の条件付き書き込み
       `agent/tests/ticket_agent/integration/test_approval_links.py`
       (`mark_consumed()` が `attribute_not_exists(task_token)` 条件により初回のみ
       書き込まれること、`mark_confirmed()` が `attribute_not_exists(confirmed_at)` 条件により
       一度しか成功しないことを検証、research.md §11)
-- [ ] T035 [P] [US3] 単体テスト: `approval_callback_handler` Step 1
+- [X] T035 [P] [US3] 単体テスト: `approval_callback_handler` Step 1
       `agent/tests/ticket_agent/unit/test_approval_callback_step1.py`
       (`GET /approvals` 呼び出しで `approval_links.mark_consumed()` のみが呼ばれ、
       `states:SendTaskSuccess` / `SendTaskFailure` が一切呼ばれないことを検証、FR-016)
-- [ ] T036 [P] [US3] 単体テスト: `approval_callback_handler` Step 2
+- [X] T036 [P] [US3] 単体テスト: `approval_callback_handler` Step 2
       `agent/tests/ticket_agent/unit/test_approval_callback_step2.py`
       (`GET /approvals/confirm` 呼び出しで、未確認時のみ `SendTaskSuccess` /
       `SendTaskFailure` が呼ばれ、既に確認済みの場合は呼ばれず「既に処理済みです」を
       返すことを検証、FR-013/FR-016)
-- [ ] T037 [P] [US3] 統合テスト: `apply_decision` / `apply_rejection` / `approval_callback`
+- [X] T037 [P] [US3] 統合テスト: `apply_decision` / `apply_rejection` / `approval_callback`
       ロールのIAM境界 `agent/tests/ticket_agent/integration/test_iam_boundaries_approval.py`
       (`apply_decision`・`apply_rejection`ロールが`states:*`を持たないこと、
       `approval_callback`ロールが`execute-api:Invoke`を一切持たないことを検証)
 
 ### Implementation for User Story 3
 
-- [ ] T038 [P] [US3] `agent/src/ticket_agent/decision.py`(T016)を拡張し、チケットが
+- [X] T038 [P] [US3] `agent/src/ticket_agent/decision.py`(T016)を拡張し、チケットが
       完了条件を満たすとBedrockが判断した場合に `COMPLETE` を返すロジックを追加する
-- [ ] T039 [P] [US3] `agent/src/ticket_agent/apply_decision_handler.py` を実装する:
+- [X] T039 [P] [US3] `agent/src/ticket_agent/apply_decision_handler.py` を実装する:
       Step Functionsから呼ばれ、`ticket_client.update_status(ticket_id, "DONE")` を実行し
       `audit_log` に `APPROVE` / `TRANSITION_DONE` を記録する(T009, T010に依存、
       T032をパスさせる)
-- [ ] T040 [P] [US3] `agent/src/ticket_agent/apply_rejection_handler.py` を実装する:
+- [X] T040 [P] [US3] `agent/src/ticket_agent/apply_rejection_handler.py` を実装する:
       `ticket_client.update_status(ticket_id, "OPEN")` を実行し `audit_log` に `REJECT` /
       `TRANSITION_OPEN` を記録する(T009, T010に依存、T033をパスさせる)
-- [ ] T041 [P] [US3] `agent/src/ticket_agent/approval_links.py` を実装する:
+- [X] T041 [P] [US3] `agent/src/ticket_agent/approval_links.py` を実装する:
       `mark_consumed(task_token, decision)`(`attribute_not_exists(task_token)`条件付き
       `PutItem`、既存時はFalseを返す)、`mark_confirmed(task_token)`
       (`attribute_not_exists(confirmed_at)`条件付き`UpdateItem`、失敗時はFalseを返す)、
       `get(task_token)` を実装する(data-model.md「承認リンク消費状態」、
       T034をパスさせる)
-- [ ] T042 [US3] `agent/src/ticket_agent/approval_callback_handler.py` に Step 1
+- [X] T042 [US3] `agent/src/ticket_agent/approval_callback_handler.py` に Step 1
       (`GET /approvals`)を実装する: `approval_links.mark_consumed()` を呼び、
       戻り値やレコードの `confirmed_at` の状態に応じて確認ページ・完了済みページ(HTML)を
       返す。`states:SendTaskSuccess` / `SendTaskFailure` は呼ばない
       (contracts/approval-flow.md Step 1、T041に依存、T035をパスさせる)
-- [ ] T043 [US3] 同ファイルに Step 2(`GET /approvals/confirm`)を実装する:
+- [X] T043 [US3] 同ファイルに Step 2(`GET /approvals/confirm`)を実装する:
       `approval_links.mark_confirmed()` が成功した場合のみ `decision=approve` なら
       `states:SendTaskSuccess`、`decision=reject` なら `states:SendTaskFailure(error=
       "Rejected")` を呼ぶ。失敗(既に確認済み)の場合は「既に処理済みです」ページを返す
       (contracts/approval-flow.md Step 2、T042に依存、T036をパスさせる)
-- [ ] T044 [P] [US3] Terraform: `agent/dynamodb.tf` に `agent-approval-links` テーブル
+- [X] T044 [P] [US3] Terraform: `agent/dynamodb.tf` に `agent-approval-links` テーブル
       (オンデマンドモード、`PK = task_token`(文字列)、`ttl` 属性でDynamoDB TTLを有効化)を
       定義する(data-model.md「承認リンク消費状態」)
-- [ ] T045 [P] [US3] Terraform: `agent/sns.tf` に `agent-approval-request` トピックと
+- [X] T045 [P] [US3] Terraform: `agent/sns.tf` に `agent-approval-request` トピックと
       運用者メール(またはSlack連携用)サブスクリプションを追加する
-- [ ] T046 [P] [US3] Terraform: `agent/iam.tf` に `apply_decision` ロール(`execute-api:
+- [X] T046 [P] [US3] Terraform: `agent/iam.tf` に `apply_decision` ロール(`execute-api:
       Invoke`は`.../v1/PATCH/tickets/*/status`のみ、`states:*`は含まない)、
       `apply_rejection` ロール(同様)を定義する(T006に依存。この2ロールはステートマシンの
       ARNに依存しないため、ステートマシン定義(T048)より前に用意できる)
-- [ ] T047 [US3] Terraform: `agent/lambda.tf` に `apply_decision` / `apply_rejection` の
+- [X] T047 [US3] Terraform: `agent/lambda.tf` に `apply_decision` / `apply_rejection` の
       2Lambdaを追加する(T039, T040, T046に依存 — Step Functions(T048)がこれらのLambda
       ARNを参照するため、ステートマシン定義より前に定義する、/speckit-analyze F3対応)
-- [ ] T048 [US3] Terraform: `agent/step_functions.tf` にStandard型の承認ステートマシンを
+- [X] T048 [US3] Terraform: `agent/step_functions.tf` にStandard型の承認ステートマシンを
       定義する: `RequestApproval`(`arn:aws:states:::sns:publish.waitForTaskToken`統合、
       `agent-approval-request`トピック(T045)へ `$$.Task.Token` を埋め込んだ承認/却下URLを
       `States.Format`で構築して発行、`TimeoutSeconds = var.approval_timeout_seconds`)→
@@ -329,37 +329,37 @@ plan.mdの Project Structure に従う:
       ステートマシン用IAMロール(`sns:Publish`・対象Lambda2つへの`lambda:InvokeFunction`)と、
       `logging_configuration`(`level = "ALL"`、専用CloudWatchロググループ、
       タイムアウト到達を含む実行履歴の追跡用)もあわせて定義する
-- [ ] T049 [US3] Terraform: `agent/iam.tf` に `approval_callback` ロールを定義する。許可:
+- [X] T049 [US3] Terraform: `agent/iam.tf` に `approval_callback` ロールを定義する。許可:
       `states:SendTaskSuccess`/`SendTaskFailure`(T048のステートマシンARNのみ)、
       `dynamodb:GetItem`/`PutItem`/`UpdateItem`(T044の`agent-approval-links`テーブルのみ)。
       `execute-api:Invoke`は一切持たない(T044, T048に依存 — ステートマシンARNを参照する
       ためT048より後に定義する、/speckit-analyze F3対応。T037をパスさせる)
-- [ ] T050 [US3] Terraform: `agent/lambda.tf` に `approval_callback` Lambdaを追加する
+- [X] T050 [US3] Terraform: `agent/lambda.tf` に `approval_callback` Lambdaを追加する
       (T042, T043, T049に依存)
-- [ ] T051 [US3] Terraform: `agent/api_gateway.tf` に承認コールバック用REST API
+- [X] T051 [US3] Terraform: `agent/api_gateway.tf` に承認コールバック用REST API
       (`GET /approvals`, `GET /approvals/confirm`、いずれも`authorization = "NONE"`、
       Lambdaプロキシ統合、デプロイ・ステージ)を定義する(contracts/approval-flow.md、
       T050に依存 — `approval_callback`Lambdaの`invoke_arn`を参照するためT050より後に
       定義する、/speckit-analyze F3対応)
-- [ ] T052 [US3] Terraform: `agent/iam.tf` の `decision` ロール(T019)に
+- [X] T052 [US3] Terraform: `agent/iam.tf` の `decision` ロール(T019)に
       `states:StartExecution`(T048のステートマシンARNのみ)を追加し、`agent/lambda.tf` の
       `decision` Lambda(T020)に環境変数 `APPROVAL_STATE_MACHINE_ARN` を追加する
       (T048に依存)
-- [ ] T053 [P] [US3] 単体テスト(FR-011の振る舞い検証、/speckit-analyze F4対応):
+- [X] T053 [P] [US3] 単体テスト(FR-011の振る舞い検証、/speckit-analyze F4対応):
       `agent/tests/ticket_agent/unit/test_decision_handler_completion.py`
       (`decision.py`(T038)が`COMPLETE`と判断したチケットについて、`decision_handler`が
       `states.start_execution()`(環境変数`APPROVAL_STATE_MACHINE_ARN`)のみを呼び、
       `ticket_client.update_status(..., "DONE")`を一切呼ばないことを検証する。
       IAM境界テスト(T014, T037)がロール権限レベルの担保であるのに対し、本テストは
       アプリケーションコードの振る舞いレベルでFR-011を直接検証する)(T038, T052に依存)
-- [ ] T054 [US3] `agent/src/ticket_agent/decision_handler.py`(T017, T029)を拡張し、
+- [X] T054 [US3] `agent/src/ticket_agent/decision_handler.py`(T017, T029)を拡張し、
       `COMPLETE` 判断のチケットについては `ticket_client.update_status` を直接呼ばず、
       `states.start_execution()`(環境変数 `APPROVAL_STATE_MACHINE_ARN` を使用)で
       承認ステートマシンを起動する処理を追加する(FR-011/012、T038, T052に依存、
       T053をパスさせる)
-- [ ] T055 [US3] Terraform: `agent/outputs.tf` に承認コールバックAPIのベースURLの出力を
+- [X] T055 [US3] Terraform: `agent/outputs.tf` に承認コールバックAPIのベースURLの出力を
       追加する(T048のSNSメッセージテンプレートが参照する、T051に依存)
-- [ ] T056 [US3] Terraform: `agent/cloudwatch.tf` に `apply_decision` / `apply_rejection`
+- [X] T056 [US3] Terraform: `agent/cloudwatch.tf` に `apply_decision` / `apply_rejection`
       (T047) / `approval_callback`(T050) Lambdaのロググループ(`retention_in_days =
       var.log_retention_days`)を追加する(T030と同様の方針、T047, T050に依存)
 
@@ -373,13 +373,13 @@ plan.mdの Project Structure に従う:
 
 **Purpose**: 全ストーリーに関わる仕上げ作業
 
-- [ ] T057 [P] `agent/` で `pytest -v` を実行し、全ユーザーストーリーの単体・統合テストが
+- [X] T057 [P] `agent/` で `pytest -v` を実行し、全ユーザーストーリーの単体・統合テストが
       成功することを確認する
-- [ ] T058 `specs/001-ticket-management/quickstart.md` のcurl手順を、`core/`の`AWS_IAM`化
+- [X] T058 `specs/001-ticket-management/quickstart.md` のcurl手順を、`core/`の`AWS_IAM`化
       (T004)後も動作するよう更新する(contracts/ticket-api-access-control.md「既存
       ドキュメントへの影響」。例: `awscurl`利用への切り替え、または
       `aws apigateway test-invoke-method` を使った代替手順の追記)
-- [ ] T059 [P] `core/`・`agent/`双方で `terraform fmt -check` / `terraform validate` を
+- [X] T059 [P] `core/`・`agent/`双方で `terraform fmt -check` / `terraform validate` を
       実行し、constitution原則II(IaC統一)・原則IV(タグ付け必須化)からの逸脱がないことを
       確認する
 - [ ] T060 quickstart.md の手順1〜6をデプロイ済み環境に対して実行し、SC-001〜SC-006を
