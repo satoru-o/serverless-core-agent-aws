@@ -1,6 +1,7 @@
 # Spec Kit
 /.claude
-/.specify
+/.specify/*
+!/.specify/memory
 
 # Local .terraform directories
 **/.terraform/*
